@@ -219,7 +219,8 @@
   .label { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); }
   .when-title { font-size: 36px; text-align: center; }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="date"] {
     width: 100%;
     height: 52px;
     padding: 0 16px;
@@ -230,6 +231,10 @@
     box-shadow: 3px 3px 0 var(--ink);
   }
   input::placeholder { color: var(--soft); opacity: 1; }
+  input[type="date"] { display: block; -webkit-appearance: none; appearance: none; text-align: left; }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  .date-pick { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  [hidden] { display: none !important; }
 
   .nav { align-self: stretch; display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
 
@@ -376,6 +381,10 @@
     <div class="field">
       <p class="label" id="day-label">Day</p>
       <div class="grid-2 tight" id="days" role="group" aria-labelledby="day-label"></div>
+      <div class="date-pick" id="date-field" hidden>
+        <label class="label" for="date">Which day works?</label>
+        <input id="date" type="date">
+      </div>
     </div>
     <div class="field">
       <p class="label" id="time-label">Time</p>
@@ -440,7 +449,9 @@
       { title: 'Surprise me', sub: 'Trust the process', ticket: 'A surprise (trust me)',
         icon: 'M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6-5.6-1.9 5.6-1.9zM19 16v4M17 18h4' }
     ],
-    days: ['Friday', 'Saturday', 'Sunday', 'Next week'],
+    days: ['Friday', 'Saturday', 'Sunday'],
+    // Extra day pill that opens the calendar
+    customDayLabel: 'Pick a date',
     times: ['Afternoon', 'Evening'],
     // No dodges this many times, then gives up and actually works
     maxDodges: 6,
@@ -583,7 +594,7 @@
     vibesEl.appendChild(b);
   });
 
-  function pills(container, labels, key) {
+  function pills(container, labels, onPick) {
     labels.forEach((label) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -591,15 +602,41 @@
       b.textContent = label;
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => {
-        state[key] = label;
         select(container, b);
+        onPick(label);
         toDoneBtn.disabled = !(state.day && state.time);
       });
       container.appendChild(b);
     });
   }
-  pills($('#days'), CONFIG.days, 'day');
-  pills($('#times'), CONFIG.times, 'time');
+
+  // ---- Custom date ----
+  const dateField = $('#date-field');
+  const dateInput = $('#date');
+  const today = new Date();
+  dateInput.min = new Date(today - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  function prettyDate(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  pills($('#days'), CONFIG.days, (label) => {
+    state.day = label;
+    dateField.hidden = true;
+  });
+  pills($('#days'), [CONFIG.customDayLabel], () => {
+    dateField.hidden = false;
+    state.day = prettyDate(dateInput.value);
+    try { dateInput.showPicker(); } catch (e) { dateInput.focus(); }
+  });
+  pills($('#times'), CONFIG.times, (label) => { state.time = label; });
+
+  ['input', 'change'].forEach((type) => dateInput.addEventListener(type, () => {
+    state.day = prettyDate(dateInput.value);
+    toDoneBtn.disabled = !(state.day && state.time);
+  }));
 
   $('#note').addEventListener('input', (e) => { state.note = e.target.value.trim(); });
 
