@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beta test</title>
+<meta name="description" content="Built something new. Tell me what you think.">
+<meta property="og:title" content="Beta test">
+<meta property="og:description" content="Built something new. Tell me what you think.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FFE3EC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fredoka:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ground: #FFE3EC;
+    --dots: #FFC4D6;
+    --ink: #4A0D25;
+    --soft: #8A3A57;
+    --accent: #D81B60;
+    --butter: #FFD84D;
+    --paper: #FFFFFF;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--ground);
+    background-image: radial-gradient(var(--dots) 1.6px, transparent 1.9px);
+    background-size: 22px 22px;
+    font-family: 'Fredoka', system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  h1:focus { outline: none; }
+
+  .app {
+    position: relative;
+    isolation: isolate;
+    max-width: 420px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .decor { position: absolute; z-index: -1; pointer-events: none; height: auto; }
+
+  /* Mascot */
+  .mascot { display: flex; justify-content: center; }
+  .mascot svg { display: block; width: 104px; height: 96px; overflow: visible; animation: bob 2.6s ease-in-out infinite; }
+  .face { display: none; }
+  .mascot[data-mood="happy"] .face-happy,
+  .mascot[data-mood="worried"] .face-worried,
+  .mascot[data-mood="ecstatic"] .face-ecstatic { display: inline; }
+
+  /* Screens */
+  .screen { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .screen[hidden] { display: none; }
+  .screen:not([hidden]) { animation: pop-in 0.35s ease; }
+
+  .sticker {
+    font-family: 'Caveat', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    background: var(--butter);
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 4px 18px;
+    box-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(-2deg);
+  }
+
+  h1 { margin: 0; font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+  .heading { text-align: center; }
+  .sub { margin: 6px 0 0; font-size: 18px; font-weight: 500; line-height: 1.35; color: var(--soft); }
+  .accent-title { font-size: 42px; color: var(--accent); }
+  .accent-title.big { font-size: 46px; line-height: 1; }
+
+  .card {
+    align-self: stretch;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 28px;
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 22px 22px 28px;
+    text-align: center;
+  }
+  .hey { margin: 0; font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; color: var(--soft); }
+  .ask-title { margin-top: 4px; font-size: clamp(32px, 10vw, 38px); }
+
+  /* Buttons */
+  .btn {
+    min-height: 52px;
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 var(--ink);
+    font-weight: 600;
+    line-height: 1;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn-primary { background: var(--accent); color: #FFFFFF; font-size: 20px; padding: 14px 32px; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:disabled:active { transform: none; box-shadow: 4px 4px 0 var(--ink); }
+
+  /* --n is how many times she's tried to hit No */
+  .btn-yes {
+    --n: 0;
+    font-weight: 700;
+    font-size: calc(20px + var(--n) * 4px);
+    padding: calc(14px + var(--n) * 3px) calc(34px + var(--n) * 6px);
+  }
+  .btn-no { background: var(--paper); color: var(--ink); font-size: 20px; padding: 14px 34px; }
+  .btn-no.floating {
+    position: fixed;
+    z-index: 10;
+    font-size: 18px;
+    padding: 13px 22px;
+    white-space: nowrap;
+    transition: left 0.18s ease, top 0.18s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .link {
+    background: none;
+    border: 0;
+    padding: 10px 6px;
+    min-height: 44px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .ask-actions {
+    align-self: stretch;
+    flex: 1;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .ask-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; }
+
+  .made-by {
+    margin: 0;
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--soft);
+  }
+
+  /* Choices */
+  .grid-2 { align-self: stretch; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .grid-2.tight { gap: 10px; }
+
+  .option {
+    min-height: 136px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    text-align: left;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  }
+  .option-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--ground);
+    border: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .option-title { font-size: 18px; font-weight: 600; line-height: 1.15; }
+  .option-sub { font-size: 14px; font-weight: 500; line-height: 1.25; color: var(--soft); }
+
+  .pill {
+    min-height: 52px;
+    padding: 12px 16px;
+    font-size: 18px;
+    font-weight: 600;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  }
+
+  .option[aria-pressed="true"],
+  .pill[aria-pressed="true"] { background: var(--butter); box-shadow: 1px 1px 0 var(--ink); transform: translate(3px, 3px); }
+
+  .field { align-self: stretch; display: flex; flex-direction: column; gap: 8px; }
+  .label { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); }
+  .when-title { font-size: 36px; text-align: center; }
+
+  input[type="text"] {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    font-size: 17px;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  input::placeholder { color: var(--soft); opacity: 1; }
+
+  .nav { align-self: stretch; display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+
+  /* Ticket */
+  .ticket {
+    align-self: stretch;
+    position: relative;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 6px 6px 0 var(--ink);
+    overflow: hidden;
+  }
+  .ticket-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: #FFFFFF;
+    border-bottom: 2.5px solid var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+  }
+  .ticket-body { margin: 0; padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .ticket-body dt { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--soft); }
+  .ticket-body dd { margin: 2px 0 0; font-size: 21px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+  .ticket-body dd.note { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .perf { position: relative; margin: 0 34px; border-top: 2.5px dashed var(--ink); }
+  .perf span {
+    position: absolute;
+    top: -10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--ground);
+    border: 2.5px solid var(--ink);
+  }
+  .perf span:first-child { left: -26px; }
+  .perf span:last-child { right: -26px; }
+  .ticket-stub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px 14px;
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .nope-card { padding: 28px 24px; }
+  .nope-card h1 { font-size: 40px; }
+  .nope-card .sub { margin-top: 12px; line-height: 1.4; }
+
+  /* Confetti */
+  .confetti { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+  .confetti span { position: absolute; top: 0; border: 1.5px solid var(--ink); border-radius: 2px; }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-6px) rotate(2deg); }
+  }
+  /* Ends on transform: none so the floating No stays fixed to the viewport */
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mascot svg, .screen:not([hidden]) { animation: none; }
+    .btn-no.floating { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+
+  <svg class="decor" aria-hidden="true" viewBox="0 0 24 24" style="left: 2px; top: 132px; width: 28px; transform: rotate(-14deg)"><path d="M12 20.5C6 16.6 3 13.4 3 9.6 3 7 5 5 7.5 5c1.9 0 3.5 1.1 4.5 2.7C13 6.1 14.6 5 16.5 5 19 5 21 7 21 9.6c0 3.8-3 7-9 10.9z" fill="#FF8FB1" stroke="#4A0D25" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <svg class="decor" aria-hidden="true" viewBox="0 0 24 24" style="right: 8px; top: 100px; width: 26px"><path d="M12 2.5l2.2 6.6 6.8 2.4-6.8 2.4L12 20.5l-2.2-6.6L3 11.5l6.8-2.4z" fill="#FFD84D" stroke="#4A0D25" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <svg class="decor" aria-hidden="true" viewBox="0 0 24 24" style="right: 2px; bottom: 132px; width: 34px; transform: rotate(12deg)"><path d="M12 20.5C6 16.6 3 13.4 3 9.6 3 7 5 5 7.5 5c1.9 0 3.5 1.1 4.5 2.7C13 6.1 14.6 5 16.5 5 19 5 21 7 21 9.6c0 3.8-3 7-9 10.9z" fill="#FF8FB1" stroke="#4A0D25" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  <svg class="decor" aria-hidden="true" viewBox="0 0 24 24" style="left: 6px; bottom: 170px; width: 22px"><path d="M12 2.5l2.2 6.6 6.8 2.4-6.8 2.4L12 20.5l-2.2-6.6L3 11.5l6.8-2.4z" fill="#FFD84D" stroke="#4A0D25" stroke-width="1.8" stroke-linejoin="round"/></svg>
+
+  <div class="mascot" id="mascot" data-mood="happy">
+    <svg viewBox="0 0 120 110" role="img" aria-label="A little heart with a face">
+      <path d="M60 104C22 78 5 55 5 33 5 15 18 5 34 5c11 0 20 6 26 16 6-10 15-16 26-16 16 0 29 10 29 28 0 22-17 45-55 71z" fill="#FF6B98" stroke="#4A0D25" stroke-width="4" stroke-linejoin="round"/>
+      <ellipse cx="30" cy="25" rx="8" ry="4.5" fill="#FFFFFF" opacity="0.7" transform="rotate(-32 30 25)"/>
+      <ellipse cx="33" cy="62" rx="7" ry="4.5" fill="#E8336F" opacity="0.5"/>
+      <ellipse cx="87" cy="62" rx="7" ry="4.5" fill="#E8336F" opacity="0.5"/>
+      <g class="face face-happy">
+        <circle cx="45" cy="48" r="6" fill="#4A0D25"/>
+        <circle cx="75" cy="48" r="6" fill="#4A0D25"/>
+        <circle cx="47.5" cy="45.5" r="2" fill="#FFFFFF"/>
+        <circle cx="77.5" cy="45.5" r="2" fill="#FFFFFF"/>
+        <path d="M52 62Q60 71 68 62" fill="none" stroke="#4A0D25" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <g class="face face-worried">
+        <path d="M37 37L50 33M83 37L70 33" fill="none" stroke="#4A0D25" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="45" cy="48" r="6" fill="#4A0D25"/>
+        <circle cx="75" cy="48" r="6" fill="#4A0D25"/>
+        <circle cx="47.5" cy="45.5" r="2" fill="#FFFFFF"/>
+        <circle cx="77.5" cy="45.5" r="2" fill="#FFFFFF"/>
+        <path d="M52 69Q60 61 68 69" fill="none" stroke="#4A0D25" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <g class="face face-ecstatic">
+        <path d="M38 50Q45 41 52 50M68 50Q75 41 82 50" fill="none" stroke="#4A0D25" stroke-width="4" stroke-linecap="round"/>
+        <path d="M49 60Q60 78 71 60Z" fill="#4A0D25" stroke="#4A0D25" stroke-width="4" stroke-linejoin="round"/>
+      </g>
+    </svg>
+  </div>
+
+  <section class="screen" data-screen="ask" aria-labelledby="ask-title">
+    <span class="sticker">I built a whole website for this</span>
+    <div class="card">
+      <p class="hey">Hey <span data-her></span>,</p>
+      <h1 id="ask-title" class="ask-title" tabindex="-1">will you go on a date with me?</h1>
+    </div>
+    <div class="ask-actions">
+      <div class="ask-row">
+        <button type="button" class="btn btn-primary btn-yes" id="yes">Yes</button>
+        <button type="button" class="btn btn-no" id="no">No</button>
+      </div>
+    </div>
+    <p class="made-by">made by <span data-you></span> (and a very supportive AI)</p>
+  </section>
+
+  <section class="screen" data-screen="vibe" aria-labelledby="vibe-title" hidden>
+    <span class="sticker">step 1 of 2</span>
+    <div class="heading">
+      <h1 id="vibe-title" class="accent-title" tabindex="-1">Yay! Okay.</h1>
+      <p class="sub">Pick the vibe:</p>
+    </div>
+    <div class="grid-2" id="vibes" role="group" aria-labelledby="vibe-title"></div>
+    <div class="nav">
+      <button type="button" class="link" data-go="ask">Back</button>
+      <button type="button" class="btn btn-primary" id="to-when" disabled>Next</button>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="when" aria-labelledby="when-title" hidden>
+    <span class="sticker">step 2 of 2</span>
+    <h1 id="when-title" class="when-title" tabindex="-1">When works for you?</h1>
+    <div class="field">
+      <p class="label" id="day-label">Day</p>
+      <div class="grid-2 tight" id="days" role="group" aria-labelledby="day-label"></div>
+    </div>
+    <div class="field">
+      <p class="label" id="time-label">Time</p>
+      <div class="grid-2 tight" id="times" role="group" aria-labelledby="time-label"></div>
+    </div>
+    <div class="field">
+      <label class="label" for="note">Anything I should know?</label>
+      <input id="note" type="text" maxlength="120" autocomplete="off" placeholder="Allergies, hates mini golf…">
+    </div>
+    <div class="nav">
+      <button type="button" class="link" data-go="vibe">Back</button>
+      <button type="button" class="btn btn-primary" id="to-done" disabled>Lock it in</button>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="done" aria-labelledby="done-title" hidden>
+    <span class="sticker">best answer ever</span>
+    <div class="heading">
+      <h1 id="done-title" class="accent-title big" tabindex="-1">It's a date.</h1>
+      <p class="sub">Screenshot this ticket and send it to me. I'll take it from here.</p>
+    </div>
+    <div class="ticket">
+      <div class="ticket-head"><span>ADMIT TWO</span><span>No. 001</span></div>
+      <dl class="ticket-body">
+        <div><dt>Who</dt><dd><span data-her></span> + <span data-you></span></dd></div>
+        <div><dt>What</dt><dd id="t-what"></dd></div>
+        <div><dt>When</dt><dd id="t-when"></dd></div>
+        <div id="t-note-row" hidden><dt>Note</dt><dd class="note" id="t-note"></dd></div>
+      </dl>
+      <div class="perf" aria-hidden="true"><span></span><span></span></div>
+      <div class="ticket-stub">
+        <span>Valid for one very good time</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path d="M12 20.5C6 16.6 3 13.4 3 9.6 3 7 5 5 7.5 5c1.9 0 3.5 1.1 4.5 2.7C13 6.1 14.6 5 16.5 5 19 5 21 7 21 9.6c0 3.8-3 7-9 10.9z" fill="#D81B60" stroke="#4A0D25" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <button type="button" class="link" data-go="vibe">Change my answers</button>
+  </section>
+
+  <section class="screen" data-screen="nope" aria-labelledby="nope-title" hidden>
+    <span class="sticker">no hard feelings</span>
+    <div class="card nope-card">
+      <h1 id="nope-title" tabindex="-1">Totally fair.</h1>
+      <p class="sub">Thanks for being honest with me. Still really glad I know you.</p>
+    </div>
+    <button type="button" class="link" data-go="ask">Wait, go back</button>
+  </section>
+
+</main>
+
+<script>
+  // ---- Edit these ----
+  const CONFIG = {
+    herName: 'Coral',
+    yourName: 'Olivier',
+    vibes: [
+      { title: 'Coffee + a walk', sub: 'Low-key, lots of talking', ticket: 'Coffee + a walk',
+        icon: 'M4 9h12v4.5A5.5 5.5 0 0 1 10.5 19h-1A5.5 5.5 0 0 1 4 13.5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1.3 1 1.7 1 3M12 3.5c0 1.3 1 1.7 1 3' },
+      { title: 'Dinner somewhere cute', sub: 'I’ll book it', ticket: 'Dinner somewhere cute',
+        icon: 'M6 3v6a2 2 0 0 0 4 0V3M8 11v10M8 3v5M17 21V3c-2.2 1.6-3 4.5-3 8h3' },
+      { title: 'Mini golf', sub: 'Loser buys dessert', ticket: 'Mini golf (loser buys dessert)',
+        icon: 'M8 21V3l10 4-10 4M4 21h12' },
+      { title: 'Surprise me', sub: 'Trust the process', ticket: 'A surprise (trust me)',
+        icon: 'M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6-5.6-1.9 5.6-1.9zM19 16v4M17 18h4' }
+    ],
+    days: ['Friday', 'Saturday', 'Sunday', 'Next week'],
+    times: ['Afternoon', 'Evening'],
+    // No dodges this many times, then gives up and actually works
+    maxDodges: 6,
+    // One label per dodge; the last one shows once No gives up
+    noLabels: ['No', 'Are you sure?', 'Really sure?', 'Think again', 'Pretty please?', 'Ouch, my heart', 'Okay fine, no']
+  };
+  // --------------------
+
+  const state = { noCount: 0, vibe: null, day: null, time: null, note: '' };
+
+  const $ = (sel) => document.querySelector(sel);
+  const mascot = $('#mascot');
+  const yesBtn = $('#yes');
+  const noBtn = $('#no');
+  const toWhenBtn = $('#to-when');
+  const toDoneBtn = $('#to-done');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  document.querySelectorAll('[data-her]').forEach((el) => { el.textContent = CONFIG.herName; });
+  document.querySelectorAll('[data-you]').forEach((el) => { el.textContent = CONFIG.yourName; });
+
+  function show(name, { focus = true } = {}) {
+    document.querySelectorAll('.screen').forEach((s) => { s.hidden = s.dataset.screen !== name; });
+    mascot.dataset.mood = name === 'ask' ? (state.noCount ? 'worried' : 'happy') : name === 'nope' ? 'happy' : 'ecstatic';
+    window.scrollTo(0, 0);
+    if (focus) $(`[data-screen="${name}"] h1`).focus({ preventScroll: true });
+  }
+
+  function select(group, picked) {
+    group.querySelectorAll('[aria-pressed]').forEach((b) => b.setAttribute('aria-pressed', String(b === picked)));
+  }
+
+  // ---- The No button that won't be pressed ----
+  function overlaps(a, b) {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  function grow(r, by) {
+    return { left: r.left - by, top: r.top - by, right: r.right + by, bottom: r.bottom + by };
+  }
+
+  function dodge() {
+    state.noCount += 1;
+    const n = state.noCount;
+    noBtn.textContent = CONFIG.noLabels[Math.min(n, CONFIG.noLabels.length - 1)];
+    yesBtn.style.setProperty('--n', Math.min(n, 5));
+    mascot.dataset.mood = 'worried';
+
+    const from = noBtn.getBoundingClientRect();
+    noBtn.classList.add('floating');
+    const size = noBtn.getBoundingClientRect();
+    const avoid = [grow(yesBtn.getBoundingClientRect(), 24)];
+
+    const pad = 12;
+    const maxX = Math.max(pad, window.innerWidth - size.width - pad);
+    const maxY = Math.max(pad, window.innerHeight - size.height - pad);
+    let spot = { x: pad, y: pad };
+    for (let i = 0; i < 60; i++) {
+      const x = pad + Math.random() * (maxX - pad);
+      const y = pad + Math.random() * (maxY - pad);
+      const box = { left: x, top: y, right: x + size.width, bottom: y + size.height };
+      if (avoid.some((a) => overlaps(a, box))) continue;
+      if (Math.hypot(x - from.left, y - from.top) < 90) continue;
+      spot = { x, y };
+      break;
+    }
+    noBtn.style.left = `${spot.x}px`;
+    noBtn.style.top = `${spot.y}px`;
+  }
+
+  function resetNo() {
+    state.noCount = 0;
+    noBtn.classList.remove('floating');
+    noBtn.style.left = '';
+    noBtn.style.top = '';
+    noBtn.textContent = CONFIG.noLabels[0];
+    yesBtn.style.setProperty('--n', 0);
+  }
+
+  const gaveUp = () => state.noCount >= CONFIG.maxDodges;
+
+  // Mouse: it runs before the cursor gets there. Touch: it runs when tapped.
+  noBtn.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !gaveUp()) dodge(); });
+  noBtn.addEventListener('click', () => (gaveUp() ? show('nope') : dodge()));
+
+  window.addEventListener('resize', () => {
+    if (!noBtn.classList.contains('floating')) return;
+    const r = noBtn.getBoundingClientRect();
+    noBtn.style.left = `${Math.min(r.left, window.innerWidth - r.width - 12)}px`;
+    noBtn.style.top = `${Math.min(r.top, window.innerHeight - r.height - 12)}px`;
+  });
+
+  // ---- Confetti ----
+  function confetti() {
+    if (reduceMotion.matches) return;
+    const colors = ['#D81B60', '#FFD84D', '#FF8FB1', '#FFFFFF', '#FF6B98'];
+    const layer = document.createElement('div');
+    layer.className = 'confetti';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+    for (let i = 0; i < 60; i++) {
+      const piece = document.createElement('span');
+      const size = 8 + Math.random() * 8;
+      piece.style.left = `${Math.random() * window.innerWidth}px`;
+      piece.style.width = `${size}px`;
+      piece.style.height = `${size * 0.6}px`;
+      piece.style.background = colors[i % colors.length];
+      layer.appendChild(piece);
+      piece.animate([
+        { transform: 'translate(0, -24px) rotate(0deg)' },
+        { transform: `translate(${(Math.random() - 0.5) * 160}px, ${window.innerHeight + 40}px) rotate(${Math.random() * 720 - 360}deg)` }
+      ], {
+        duration: 1800 + Math.random() * 1400,
+        delay: Math.random() * 300,
+        easing: 'cubic-bezier(.2,.6,.4,1)',
+        fill: 'forwards'
+      });
+    }
+    setTimeout(() => layer.remove(), 3800);
+  }
+
+  // ---- Choices ----
+  const vibesEl = $('#vibes');
+  CONFIG.vibes.forEach((v) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'option';
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = `
+      <span class="option-icon"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#4A0D25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${v.icon}"/></svg></span>
+      <span class="option-title"></span>
+      <span class="option-sub"></span>`;
+    b.querySelector('.option-title').textContent = v.title;
+    b.querySelector('.option-sub').textContent = v.sub;
+    b.addEventListener('click', () => {
+      state.vibe = v;
+      select(vibesEl, b);
+      toWhenBtn.disabled = false;
+    });
+    vibesEl.appendChild(b);
+  });
+
+  function pills(container, labels, key) {
+    labels.forEach((label) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pill';
+      b.textContent = label;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        state[key] = label;
+        select(container, b);
+        toDoneBtn.disabled = !(state.day && state.time);
+      });
+      container.appendChild(b);
+    });
+  }
+  pills($('#days'), CONFIG.days, 'day');
+  pills($('#times'), CONFIG.times, 'time');
+
+  $('#note').addEventListener('input', (e) => { state.note = e.target.value.trim(); });
+
+  // ---- Navigation ----
+  yesBtn.addEventListener('click', () => {
+    confetti();
+    show('vibe');
+  });
+
+  toWhenBtn.addEventListener('click', () => show('when'));
+
+  toDoneBtn.addEventListener('click', () => {
+    $('#t-what').textContent = state.vibe.ticket;
+    $('#t-when').textContent = `${state.day} · ${state.time}`;
+    $('#t-note').textContent = state.note;
+    $('#t-note-row').hidden = !state.note;
+    confetti();
+    show('done');
+  });
+
+  document.querySelectorAll('[data-go]').forEach((b) => {
+    b.addEventListener('click', () => {
+      if (b.dataset.go === 'ask') resetNo();
+      show(b.dataset.go);
+    });
+  });
+
+  show('ask', { focus: false });
+</script>
+</body>
+</html>
