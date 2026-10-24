@@ -219,8 +219,7 @@
   .label { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); }
   .when-title { font-size: 36px; text-align: center; }
 
-  input[type="text"],
-  input[type="date"] {
+  input[type="text"] {
     width: 100%;
     height: 52px;
     padding: 0 16px;
@@ -231,10 +230,27 @@
     box-shadow: 3px 3px 0 var(--ink);
   }
   input::placeholder { color: var(--soft); opacity: 1; }
-  input[type="date"] { display: block; -webkit-appearance: none; appearance: none; text-align: left; }
-  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
-  .date-pick { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
   [hidden] { display: none !important; }
+
+  .date-pill { position: relative; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .date-pill.picked { background: var(--butter); box-shadow: 1px 1px 0 var(--ink); transform: translate(3px, 3px); }
+  .date-pill:has(.date-overlay:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .date-overlay {
+    position: absolute;
+    /* Reach over the pill's border so edge taps count too */
+    top: -3px;
+    left: -3px;
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    font-size: 16px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
   .nav { align-self: stretch; display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
 
@@ -381,10 +397,6 @@
     <div class="field">
       <p class="label" id="day-label">Day</p>
       <div class="grid-2 tight" id="days" role="group" aria-labelledby="day-label"></div>
-      <div class="date-pick" id="date-field" hidden>
-        <label class="label" for="date">Which day works?</label>
-        <input id="date" type="date">
-      </div>
     </div>
     <div class="field">
       <p class="label" id="time-label">Time</p>
@@ -611,8 +623,15 @@
   }
 
   // ---- Custom date ----
-  const dateField = $('#date-field');
-  const dateInput = $('#date');
+  // The pill has a real date input stretched invisibly over it, so a tap opens the phone's own picker
+  const daysEl = $('#days');
+  const datePill = document.createElement('div');
+  datePill.className = 'pill date-pill';
+  datePill.innerHTML = '<span></span><input type="date" class="date-overlay">';
+  const dateLabel = datePill.querySelector('span');
+  const dateInput = datePill.querySelector('input');
+  dateLabel.textContent = CONFIG.customDayLabel;
+  dateInput.setAttribute('aria-label', CONFIG.customDayLabel);
   const today = new Date();
   dateInput.min = new Date(today - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
@@ -622,21 +641,39 @@
     return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 
-  pills($('#days'), CONFIG.days, (label) => {
-    state.day = label;
-    dateField.hidden = true;
-  });
-  pills($('#days'), [CONFIG.customDayLabel], () => {
-    dateField.hidden = false;
-    state.day = prettyDate(dateInput.value);
-    try { dateInput.showPicker(); } catch (e) { dateInput.focus(); }
-  });
-  pills($('#times'), CONFIG.times, (label) => { state.time = label; });
+  function clearCustomDate() {
+    dateInput.value = '';
+    dateLabel.textContent = CONFIG.customDayLabel;
+    datePill.classList.remove('picked');
+  }
 
-  ['input', 'change'].forEach((type) => dateInput.addEventListener(type, () => {
-    state.day = prettyDate(dateInput.value);
+  function onCustomDate() {
+    const picked = prettyDate(dateInput.value);
+    if (picked) {
+      select(daysEl, null);
+      state.day = picked;
+      dateLabel.textContent = picked;
+      datePill.classList.add('picked');
+    } else {
+      if (datePill.classList.contains('picked')) state.day = null;
+      clearCustomDate();
+    }
     toDoneBtn.disabled = !(state.day && state.time);
-  }));
+  }
+  ['input', 'change', 'blur'].forEach((type) => dateInput.addEventListener(type, onCustomDate));
+
+  // Desktop browsers only open the picker from a tiny calendar icon, so open it on any click there
+  dateInput.addEventListener('click', () => {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    try { dateInput.showPicker(); } catch (e) { /* the native control still works */ }
+  });
+
+  pills(daysEl, CONFIG.days, (label) => {
+    state.day = label;
+    clearCustomDate();
+  });
+  daysEl.appendChild(datePill);
+  pills($('#times'), CONFIG.times, (label) => { state.time = label; });
 
   $('#note').addEventListener('input', (e) => { state.note = e.target.value.trim(); });
 
